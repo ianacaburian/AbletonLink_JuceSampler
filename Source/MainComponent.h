@@ -10,12 +10,14 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "ableton/Link.hpp"
+
 //==============================================================================
 /*
     This component lives inside our window, and this is where you should put all
     your controls and content.
 */
-class MainComponent   : public AudioAppComponent
+
+class MainComponent   : public AudioAppComponent, public Timer
 {
 public:
     //==============================================================================
@@ -32,9 +34,24 @@ public:
     void resized() override;
 
 private:
+    void timerCallback() override;
+    void update_label();
+    void showDeviceSetting();
     //==============================================================================
-    // Your private member variables go here...
+    struct AbeSynth : Synthesiser
+    {
+        AbeSynth(int);
+    };
+    std::unique_ptr<ableton::Link> link;
+    const int sampler_note = 60;
+    AbeSynth abe_synth;
+    MidiBuffer mb;
 
-
+    Value link_enabled, play, bpm, quantum, num_peers, velocity;
+    
+    
+    TextButton tb_devices, tb_link, tb_play;
+    Slider sl_bpm, sl_velocity;
+    Label label;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
