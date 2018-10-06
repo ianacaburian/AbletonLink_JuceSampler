@@ -1,0 +1,124 @@
+File	Line	Description	Severity	Code	Project	Suppression State
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\array.hpp	23	cannot open source file "boost/array.hpp"	Error (active)	E1696	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\atomic_count.hpp	25	cannot open source file "boost/detail/atomic_count.hpp"	Error (active)	E1696	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\cstdint.hpp	23	cannot open source file "boost/cstdint.hpp"	Error (active)	E1696	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\memory.hpp	22	cannot open source file "boost/shared_ptr.hpp"	Error (active)	E1696	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\memory.hpp	23	cannot open source file "boost/weak_ptr.hpp"	Error (active)	E1696	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\memory.hpp	27	cannot open source file "boost/utility/addressof.hpp"	Error (active)	E1696	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	23	cannot open source file "boost/type_traits/add_const.hpp"	Error (active)	E1696	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	24	cannot open source file "boost/type_traits/conditional.hpp"	Error (active)	E1696	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	25	cannot open source file "boost/type_traits/decay.hpp"	Error (active)	E1696	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	26	cannot open source file "boost/type_traits/integral_constant.hpp"	Error (active)	E1696	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	27	cannot open source file "boost/type_traits/is_class.hpp"	Error (active)	E1696	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	28	cannot open source file "boost/type_traits/is_const.hpp"	Error (active)	E1696	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	29	cannot open source file "boost/type_traits/is_convertible.hpp"	Error (active)	E1696	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	30	cannot open source file "boost/type_traits/is_function.hpp"	Error (active)	E1696	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	31	cannot open source file "boost/type_traits/is_same.hpp"	Error (active)	E1696	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	32	cannot open source file "boost/type_traits/remove_pointer.hpp"	Error (active)	E1696	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	33	cannot open source file "boost/type_traits/remove_reference.hpp"	Error (active)	E1696	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	34	cannot open source file "boost/utility/enable_if.hpp"	Error (active)	E1696	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	35	cannot open source file "boost/utility/result_of.hpp"	Error (active)	E1696	AbeLinkolnsJuce_App	
+C:\Dev\link\include\ableton\platforms\asio\AsioTimer.hpp	126	namespace "asio" has no member "system_timer"	Error (active)	E0135	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\associated_executor.hpp	131	identifier "is_convertible" is undefined	Error (active)	E0020	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\associated_executor.hpp	131	type name is not allowed	Error (active)	E0254	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\associated_executor.hpp	131	expected an expression	Error (active)	E0029	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\associated_executor.hpp	132	expected a ')'	Error (active)	E0018	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\basic_socket_iostream.hpp	105	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\basic_socket_iostream.hpp	106	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\basic_socket_iostream.hpp	107	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\basic_socket_streambuf.hpp	98	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\basic_socket_streambuf.hpp	99	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\basic_socket_streambuf.hpp	100	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\bind_executor.hpp	203	result_of is not a template	Error (active)	E0864	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\bind_executor.hpp	494	decay is not a template	Error (active)	E0864	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\bind_executor.hpp	504	decay is not a template	Error (active)	E0864	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\bind_executor.hpp	507	identifier "is_convertible" is undefined	Error (active)	E0020	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\bind_executor.hpp	508	type name is not allowed	Error (active)	E0254	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\bind_executor.hpp	508	expected an expression	Error (active)	E0029	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\bind_executor.hpp	508	expected a ')'	Error (active)	E0018	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\defer.hpp	98	identifier "is_convertible" is undefined	Error (active)	E0020	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\defer.hpp	99	type name is not allowed	Error (active)	E0254	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\defer.hpp	99	expected an expression	Error (active)	E0029	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\defer.hpp	99	expected a ')'	Error (active)	E0018	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\atomic_count.hpp	38	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\bind_handler.hpp	118	decay is not a template	Error (active)	E0864	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\bind_handler.hpp	219	decay is not a template	Error (active)	E0864	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\cstdint.hpp	43	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\cstdint.hpp	44	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\cstdint.hpp	45	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\cstdint.hpp	46	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\cstdint.hpp	47	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\cstdint.hpp	48	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\cstdint.hpp	49	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\cstdint.hpp	50	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\cstdint.hpp	51	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\cstdint.hpp	52	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\cstdint.hpp	53	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\cstdint.hpp	54	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\cstdint.hpp	55	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\is_buffer_sequence.hpp	137	identifier "is_convertible" is undefined	Error (active)	E0020	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\is_buffer_sequence.hpp	138	type name is not allowed	Error (active)	E0254	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\memory.hpp	37	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\memory.hpp	38	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\memory.hpp	44	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\socket_ops.hpp	61	shared_ptr is not a template	Error (active)	E0864	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\socket_ops.hpp	62	weak_ptr is not a template	Error (active)	E0864	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\strand_executor_service.hpp	73	shared_ptr is not a template	Error (active)	E0864	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	57	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	60	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	61	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	62	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	63	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	64	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	65	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	66	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	67	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	68	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	69	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	70	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	71	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\detail\type_traits.hpp	72	name followed by '::' must be a class or namespace name	Error (active)	E0276	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\dispatch.hpp	99	identifier "is_convertible" is undefined	Error (active)	E0020	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\dispatch.hpp	100	type name is not allowed	Error (active)	E0254	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\dispatch.hpp	100	expected an expression	Error (active)	E0029	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\dispatch.hpp	100	expected a ')'	Error (active)	E0018	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\executor.hpp	332	not a class or struct name	Error (active)	E0262	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\executor_work_guard.hpp	123	identifier "is_convertible" is undefined	Error (active)	E0020	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\executor_work_guard.hpp	123	type name is not allowed	Error (active)	E0254	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\executor_work_guard.hpp	123	expected an expression	Error (active)	E0029	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\executor_work_guard.hpp	123	expected a ')'	Error (active)	E0018	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\executor_work_guard.hpp	134	identifier "is_convertible" is undefined	Error (active)	E0020	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\executor_work_guard.hpp	134	type name is not allowed	Error (active)	E0254	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\executor_work_guard.hpp	134	expected an expression	Error (active)	E0029	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\executor_work_guard.hpp	134	expected a ')'	Error (active)	E0018	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\executor_work_guard.hpp	156	identifier "is_convertible" is undefined	Error (active)	E0020	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\executor_work_guard.hpp	156	type name is not allowed	Error (active)	E0254	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\executor_work_guard.hpp	156	expected an expression	Error (active)	E0029	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\executor_work_guard.hpp	156	expected a ')'	Error (active)	E0018	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\impl\defer.hpp	66	identifier "is_convertible" is undefined	Error (active)	E0020	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\impl\defer.hpp	67	type name is not allowed	Error (active)	E0254	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\impl\defer.hpp	67	expected an expression	Error (active)	E0029	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\impl\defer.hpp	67	expected a ')'	Error (active)	E0018	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\impl\dispatch.hpp	66	identifier "is_convertible" is undefined	Error (active)	E0020	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\impl\dispatch.hpp	67	type name is not allowed	Error (active)	E0254	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\impl\dispatch.hpp	67	expected an expression	Error (active)	E0029	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\impl\dispatch.hpp	67	expected a ')'	Error (active)	E0018	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\impl\executor.hpp	124	this declaration has no storage class or type specifier	Error (active)	E0077	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\impl\executor.hpp	124	namespace "asio::detail" has no member "shared_ptr"	Error (active)	E0135	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\impl\executor.hpp	124	expected a ';'	Error (active)	E0065	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\impl\post.hpp	66	identifier "is_convertible" is undefined	Error (active)	E0020	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\impl\post.hpp	67	type name is not allowed	Error (active)	E0254	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\impl\post.hpp	67	expected an expression	Error (active)	E0029	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\impl\post.hpp	67	expected a ')'	Error (active)	E0018	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\io_context.hpp	615	not a class or struct name	Error (active)	E0262	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\io_context_strand.hpp	375	not a class or struct name	Error (active)	E0262	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\post.hpp	98	identifier "is_convertible" is undefined	Error (active)	E0020	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\post.hpp	99	type name is not allowed	Error (active)	E0254	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\post.hpp	99	expected an expression	Error (active)	E0029	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\post.hpp	99	expected a ')'	Error (active)	E0018	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\system_executor.hpp	146	not a class or struct name	Error (active)	E0262	AbeLinkolnsJuce_App	
+C:\Dev\link\modules\asio-standalone\asio\include\asio\thread_pool.hpp	195	not a class or struct name	Error (active)	E0262	AbeLinkolnsJuce_App	
+c:\gitrepos\abelinkolnsjuce\source\main.cpp	26	'commandLine': unreferenced formal parameter	Warning	C4100	AbeLinkolnsJuce_App	
+c:\gitrepos\abelinkolnsjuce\source\main.cpp	48	'commandLine': unreferenced formal parameter	Warning	C4100	AbeLinkolnsJuce_App	
+c:\gitrepos\abelinkolnsjuce\source\maincomponent.cpp	29	'sampleRate': unreferenced formal parameter	Warning	C4100	AbeLinkolnsJuce_App	
+c:\gitrepos\abelinkolnsjuce\source\maincomponent.cpp	29	'samplesPerBlockExpected': unreferenced formal parameter	Warning	C4100	AbeLinkolnsJuce_App	
