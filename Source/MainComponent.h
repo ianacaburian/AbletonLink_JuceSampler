@@ -34,6 +34,7 @@ public:
     void resized() override;
 
 private:
+    void play_sample(int);
     void timerCallback() override;
     void update_label();
     void showDeviceSetting();
@@ -47,10 +48,10 @@ private:
     AbeSynth abe_synth;
     MidiBuffer mb;
 
-    Value link_enabled, play, bpm, quantum, num_peers, velocity;
+    Value link_enabled, queing, stopping, bpm, quantum, num_peers, velocity;
     
     
-    TextButton tb_devices, tb_link, tb_play;
+    TextButton tb_devices, tb_link, tb_play, tb_stop;
     Slider sl_bpm, sl_velocity;
     Label label;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)

@@ -15,18 +15,20 @@ ableton::link::HostTimeFilter<ableton::platforms::windows::Clock> host_time_filt
 MainComponent::MainComponent()
     : abe_synth{ sampler_note }
     , link_enabled{ var{ false } }
-    , play{ var{ false } }
+    , queing{ var{ false } }
+    , stopping{ var{ false } }
     , bpm{ 120. }
     , quantum{ 4 }
     , num_peers{ var{ 0 } }
     , velocity{ 0.2f }
     , tb_devices{ "devices" }
     , tb_link{ "link" }
-    , tb_play{ "play" }    
+    , tb_play{ "play" }
+    , tb_stop{ "stop" }
 {    
     // GUI init ===========================================================================
-    for (auto* c : std::initializer_list<Component*>{ &tb_devices, &tb_link, &tb_play, &label, 
-                                                      &sl_bpm, &sl_velocity })
+    for (auto* c : std::initializer_list<Component*>{ &tb_devices, &tb_link, &tb_play, &tb_stop, 
+                                                      &label, &sl_bpm, &sl_velocity })
         addAndMakeVisible(c);    
     setSize(600, 400);
 
@@ -35,24 +37,27 @@ MainComponent::MainComponent()
     tb_link.setClickingTogglesState(true);
     tb_link.getToggleStateValue().referTo(link_enabled);
     tb_link.onClick = [this] { link->enable(tb_link.getToggleState()); };
+        
+    tb_play.onClick = [this] { queing = true; };
+    tb_stop.onClick = [this] { stopping = true; };
 
-    tb_play.setClickingTogglesState(true);
-    tb_play.getToggleStateValue().referTo(play);
-
-    label.setJustificationType(Justification::centred);
+    label.setJustificationType(Justification::right);
     
-    sl_bpm.setSliderStyle(Slider::SliderStyle::LinearBar);
+    for (auto* s : { &sl_bpm, &sl_velocity })
+    {
+        s->setSliderStyle(Slider::SliderStyle::LinearBar);
+        s->setTextBoxIsEditable(false);
+    }
     sl_bpm.setRange(10, 200);
     sl_bpm.getValueObject().referTo(bpm);
     sl_bpm.onValueChange = [this]
     {
         const auto host_time = link->clock().micros();
-        auto timeline = link->captureAppTimeline();
+        auto timeline = link->captureAppSessionState();
         timeline.requestBeatAtTime(0.0, host_time, quantum.getValue());
         timeline.setTempo(sl_bpm.getValue(), host_time);
-        link->commitAudioTimeline(timeline);
+        link->commitAppSessionState(timeline);
     };
-    sl_velocity.setSliderStyle(Slider::SliderStyle::LinearBar);
     sl_velocity.setRange(0, 1);
     sl_velocity.getValueObject().referTo(velocity);
     
@@ -61,7 +66,7 @@ MainComponent::MainComponent()
     laf.setColour(TextButton::buttonOnColourId, Colours::black);
     laf.setColour(TextButton::textColourOnId, Colours::limegreen);
     laf.setColour(Label::backgroundColourId, Colours::black);
-    laf.setColour(Label::textColourId, Colours::white);
+    laf.setColour(Label::textColourId, Colours::white);    
 
     startTimerHz(30);
 
@@ -72,7 +77,6 @@ MainComponent::MainComponent()
     link->setNumPeersCallback([this](std::size_t p) { num_peers = static_cast<int64>(p); });
     link->setTempoCallback([this](const double p) { bpm = p; });
 }
-
 MainComponent::~MainComponent()
 {
     if (link->isEnabled())
@@ -83,45 +87,65 @@ MainComponent::~MainComponent()
 //==============================================================================
 void MainComponent::prepareToPlay (int /*samplesPerBlockExpected*/, double sampleRate)
 {
-    abe_synth.setCurrentPlaybackSampleRate(sampleRate);
+    abe_synth.setCurrentPlaybackSampleRate(sampleRate);    
 }
 void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill)
 {
-    if (!static_cast<bool>(play.getValue()))
-        return;
     mb.clear();
     bufferToFill.clearActiveBufferRegion();
-    const auto host_time = link->clock().micros();
-    if (!deviceManager.getCurrentAudioDevice())
+    
+    auto* current_device = deviceManager.getCurrentAudioDevice();
+    if (!current_device || !link)
         return;
 
-    const auto sample_rate = deviceManager.getCurrentAudioDevice()->getCurrentSampleRate();
-    const auto device_latency = deviceManager.getCurrentAudioDevice()->getOutputLatencyInSamples();
-    const auto device_buff_size = deviceManager.getCurrentAudioDevice()->getCurrentBufferSizeSamples();
-    const auto output_latency = std::chrono::microseconds(llround(device_latency / sample_rate))
-                              + std::chrono::microseconds(llround(1.0e6 * device_buff_size));
+    auto host_time = link->clock().micros();
+    const auto sample_rate = current_device->getCurrentSampleRate();
+    const auto latency_hz = current_device->getOutputLatencyInSamples() / sample_rate;    
+    const auto latency_time = std::chrono::microseconds(llround(latency_hz));
+    auto mb_start_ghost = host_time; // mb = midi buffer, ghost = global host
+    mb_start_ghost += latency_time;
+    auto mb_end_ghost = mb_start_ghost; 
+    mb_end_ghost += std::chrono::microseconds(llround(1.0e6 * bufferToFill.numSamples));
+    auto session = link->captureAudioSessionState();
 
-    const auto mb_start_ghost = host_time + output_latency; // ghost = global host
-    
-    auto timeline = link->captureAppTimeline();
-    link->commitAppTimeline(timeline); // Timeline modifications are complete, commit the results
-    
-    const auto micros_per_sample = 1e6 / sample_rate;
-    for (auto sn = 0; sn < bufferToFill.numSamples; ++sn)
+    if (queing.getValue())
     {
-        const auto sn_ghost_time = mb_start_ghost + std::chrono::microseconds(llround(sn * micros_per_sample));
-        const auto prev_micros_time = sn_ghost_time - std::chrono::microseconds(llround(micros_per_sample));
-        const auto beat_time = timeline.beatAtTime(sn_ghost_time, quantum.getValue());
-        const auto sn_ghost_phase_time = timeline.phaseAtTime(sn_ghost_time, 1);
-        const auto prev_micros_phase_time = timeline.phaseAtTime(prev_micros_time, 1);
-
-        if (0. <= beat_time && sn_ghost_phase_time < prev_micros_phase_time)
-        {
-            mb.addEvent(MidiMessage::noteOn(1, sampler_note, velocity.getValue()), sn);
-            DBG("BEAT: " << beat_time << " PHASE: " << prev_micros_phase_time);
-
-        }
+        session.setIsPlayingAndRequestBeatAtTime(true, mb_start_ghost, 0., quantum.getValue());
+        DBG("isplaying:" << (int)session.isPlaying());
+        queing = false;
     }
+    if (stopping.getValue())
+    {
+        const auto end_of_bar = session.timeAtBeat(4., quantum.getValue());
+        
+        session.setIsPlaying(false, end_of_bar);        
+        DBG("isplaying:" << (int)session.isPlaying());
+
+        //session.setIsPlaying(false, mb_start_ghost);
+        stopping = false;
+    }
+    link->commitAudioSessionState(session); // Timeline modifications are complete, commit the results
+
+    //if (session.timeForIsPlaying() < session.isPlaying())
+    //{
+        const auto micros_per_sample = 1e6 / sample_rate;
+        for (auto sn = 0; sn < bufferToFill.numSamples; ++sn)
+        {
+            const auto sn_ghost_time = mb_start_ghost + std::chrono::microseconds(llround(sn * micros_per_sample));
+            if (session.timeForIsPlaying() < sn_ghost_time && !session.isPlaying())
+                continue;
+            const auto beat = session.beatAtTime(sn_ghost_time, quantum.getValue());
+            const auto awaiting_first_beat = beat < 0.;
+
+            const auto phase = session.phaseAtTime(sn_ghost_time, 1);
+            const auto prev_micros_time = sn_ghost_time - std::chrono::microseconds(llround(micros_per_sample));
+            const auto prev_micros_phase = session.phaseAtTime(prev_micros_time, 1);
+            const auto is_downbeat = phase < prev_micros_phase;
+
+            if (!awaiting_first_beat && is_downbeat)
+                play_sample(sn);
+        }
+    //}
     abe_synth.renderNextBlock(*bufferToFill.buffer, mb, 0, bufferToFill.numSamples);
 }
 void MainComponent::releaseResources()
@@ -137,17 +161,21 @@ void MainComponent::resized()
     const auto width = bounds.getWidth();
 
     auto&& button_bounds = bounds.removeFromTop(bounds.getHeight() / 4);    
-    auto&& buttons = std::initializer_list<Component*>{ &tb_devices, &tb_link, &tb_play };
+    auto&& buttons = std::initializer_list<Component*>{ &tb_devices, &tb_link, &tb_play, &tb_stop };
     for (auto* b : buttons)
         b->setBounds(button_bounds.removeFromLeft(width / buttons.size()).toNearestIntEdges());
-    
-    label.setBounds(bounds.removeFromTop(bounds.getHeight() / 2).toNearestIntEdges());
+        
+    label.setBounds(bounds.removeFromTop(bounds.getHeight() / 2).toNearestIntEdges().withRight(tb_link.getRight()));
     label.setFont(Font{ "consolas", "mono", label.getHeight() / 4.f });
 
     const auto sl_height = bounds.getHeight();
     auto&& sliders = std::initializer_list<Component*>{ &sl_bpm, &sl_velocity };
     for (auto* s : sliders)
         s->setBounds(bounds.removeFromTop(sl_height / sliders.size()).toNearestIntEdges());    
+}
+void MainComponent::play_sample(int sn)
+{
+    mb.addEvent(MidiMessage::noteOn(1, sampler_note, velocity.getValue()), sn);
 }
 void MainComponent::timerCallback()
 {
@@ -156,15 +184,14 @@ void MainComponent::timerCallback()
 void MainComponent::update_label()
 {
     const auto time = link->clock().micros();
-    auto timeline = link->captureAppTimeline();
-    const auto beat_str = String{ timeline.beatAtTime(time, quantum.getValue()), 3 }.paddedLeft(' ', 5);
-    const auto phase_str = String{ timeline.phaseAtTime(time, quantum.getValue()), 3 }.paddedLeft(' ', 5);
-    auto msg = String{};
-    msg << "Peers: " << num_peers.toString() << "\n"
-        << "Quantum: " << quantum.toString() << "\n"
-        << "Beats: " << beat_str << "\n"
-        << "Phase: " << phase_str << "\n";
-    label.setText(msg, dontSendNotification);
+    const auto session = link->captureAppSessionState();    
+    const auto state_str = queing.getValue() ? "queueing.." : session.isPlaying() ? "playing" : stopping.getValue() ? "stopping" : "stopped";
+    const auto beat_str = String{ session.beatAtTime(time, quantum.getValue()), 3 }.paddedLeft(' ', 7);
+    const auto phase_str = String{ session.phaseAtTime(time, quantum.getValue()), 3 }.paddedLeft(' ', 7);
+    label.setText(String{ "Peers: " + num_peers.toString() + "\n"
+                        + "State: " + state_str + "\n"
+                        + "Beats: " + beat_str + "\n"
+                        + "Phase: " + phase_str + "\n" }, dontSendNotification);
 }
 void MainComponent::showDeviceSetting()
 {
