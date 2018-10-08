@@ -152,7 +152,7 @@ void MainComponent::play_sequencer_beats(const double micros_per_sample, const i
     const auto beat = session.beatAtTime(host_time, 1);
     const auto next_beat = ceil(beat);
     const auto next_beat_time = session.timeAtBeat(next_beat, 1);
-    const auto end_time = host_time + Micros{ llround(micros_per_sample * (num_samples - 1)) };
+    const auto end_time = host_time + Micros{ llround(micros_per_sample * num_samples) };
 
     if (next_beat_time < end_time) // Downbeat occurs within this buffer cycle.
     {   
