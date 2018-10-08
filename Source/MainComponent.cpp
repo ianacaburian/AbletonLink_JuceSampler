@@ -13,69 +13,58 @@ ableton::link::HostTimeFilter<ableton::platforms::windows::Clock> host_time_filt
 
 //==============================================================================
 MainComponent::MainComponent()
-    : abe_synth{ sampler_note }
-    , link_enabled{ var{ false } }
-    , queing{ var{ false } }
-    , stopping{ var{ false } }
+    : shared_engine_data({ 0., false, false, 4., false })
+    , lock_free_engine_data{ shared_engine_data }
+    , abe_synth{ sampler_note }
     , bpm{ 120. }
-    , quantum{ 4 }
-    , num_peers{ var{ 0 } }
     , velocity{ 0.2f }
+    , is_playing{ false }
     , tb_devices{ "devices" }
     , tb_link{ "link" }
     , tb_play{ "play" }
     , tb_stop{ "stop" }
+    , tb_sync{ "sync" }
 {    
-    // GUI init ===========================================================================
-    for (auto* c : std::initializer_list<Component*>{ &tb_devices, &tb_link, &tb_play, &tb_stop, 
+    // GUI initialization
+    for (auto* c : std::initializer_list<Component*>{ &tb_devices, &tb_link, &tb_play, &tb_stop, &tb_sync, 
                                                       &label, &sl_bpm, &sl_velocity })
         addAndMakeVisible(c);    
     setSize(600, 400);
+    startTimerHz(30);
 
+    // Component callbacks
     tb_devices.onClick = [this] { abe_synth.noteOn(1, 60, 1.f); };
-
-    tb_link.setClickingTogglesState(true);
-    tb_link.getToggleStateValue().referTo(link_enabled);
     tb_link.onClick = [this] { link->enable(tb_link.getToggleState()); };
-        
-    tb_play.onClick = [this] { queing = true; };
-    tb_stop.onClick = [this] { stopping = true; };
+    tb_play.onClick = [this] { const ScopedLock lock(engine_data_guard); 
+                               shared_engine_data.request_start = true; };
+    tb_stop.onClick = [this] { const ScopedLock lock(engine_data_guard); 
+                               shared_engine_data.request_stop = true; };
+    sl_bpm.onValueChange = [this] { const ScopedLock lock(engine_data_guard); 
+                                    shared_engine_data.requested_bpm = sl_bpm.getValue(); };
 
-    label.setJustificationType(Justification::right);
-    
-    for (auto* s : { &sl_bpm, &sl_velocity })
-    {
-        s->setSliderStyle(Slider::SliderStyle::LinearBar);
-        s->setTextBoxIsEditable(false);
-    }
+    // Component properties
+    tb_link.setClickingTogglesState(true);
     sl_bpm.setRange(10, 200);
     sl_bpm.getValueObject().referTo(bpm);
-    sl_bpm.onValueChange = [this]
-    {
-        const auto host_time = link->clock().micros();
-        auto timeline = link->captureAppSessionState();
-        timeline.requestBeatAtTime(0.0, host_time, quantum.getValue());
-        timeline.setTempo(sl_bpm.getValue(), host_time);
-        link->commitAppSessionState(timeline);
-    };
     sl_velocity.setRange(0, 1);
     sl_velocity.getValueObject().referTo(velocity);
     
+    // Component appearance
     auto&& laf = getLookAndFeel();
     laf.setColour(TextButton::buttonColourId, Colours::black);
     laf.setColour(TextButton::buttonOnColourId, Colours::black);
     laf.setColour(TextButton::textColourOnId, Colours::limegreen);
     laf.setColour(Label::backgroundColourId, Colours::black);
     laf.setColour(Label::textColourId, Colours::white);    
+    label.setJustificationType(Justification::right);
+    for (auto* s : { &sl_bpm, &sl_velocity }) { s->setSliderStyle(Slider::SliderStyle::LinearBar);
+                                                s->setTextBoxIsEditable(false); }
 
-    startTimerHz(30);
-
-    // Audio init =========================================================================
+    // Audio initialization
     setAudioChannels (0, 2);
-    link.reset(new ableton::Link{ bpm.getValue() });
-    link->enable(false);    
-    link->setNumPeersCallback([this](std::size_t p) { num_peers = static_cast<int64>(p); });
+    link.reset(new ableton::Link{ bpm.getValue() });    
     link->setTempoCallback([this](const double p) { bpm = p; });
+    link->enable(false);
 }
 MainComponent::~MainComponent()
 {
@@ -90,62 +79,24 @@ void MainComponent::prepareToPlay (int /*samplesPerBlockExpected*/, double sampl
     abe_synth.setCurrentPlaybackSampleRate(sampleRate);    
 }
 void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill)
-{
-    mb.clear();
-    bufferToFill.clearActiveBufferRegion();
-    
+{    
     auto* current_device = deviceManager.getCurrentAudioDevice();
     if (!current_device || !link)
         return;
 
-    auto host_time = link->clock().micros();
     const auto sample_rate = current_device->getCurrentSampleRate();
-    const auto latency_hz = current_device->getOutputLatencyInSamples() / sample_rate;    
-    const auto latency_time = std::chrono::microseconds(llround(latency_hz));
-    auto mb_start_ghost = host_time; // mb = midi buffer, ghost = global host
-    mb_start_ghost += latency_time;
-    auto mb_end_ghost = mb_start_ghost; 
-    mb_end_ghost += std::chrono::microseconds(llround(1.0e6 * bufferToFill.numSamples));
-    auto session = link->captureAudioSessionState();
+    auto output_host_time = link->clock().micros();
+    output_host_time += calculate_latency_time(current_device, sample_rate, bufferToFill.numSamples);
 
-    if (queing.getValue())
-    {
-        session.setIsPlayingAndRequestBeatAtTime(true, mb_start_ghost, 0., quantum.getValue());
-        DBG("isplaying:" << (int)session.isPlaying());
-        queing = false;
-    }
-    if (stopping.getValue())
-    {
-        const auto end_of_bar = session.timeAtBeat(4., quantum.getValue());
-        
-        session.setIsPlaying(false, end_of_bar);        
-        DBG("isplaying:" << (int)session.isPlaying());
+    const auto engine_data = pull_engine_data();
+    mb.clear();
+    bufferToFill.clearActiveBufferRegion();
 
-        //session.setIsPlaying(false, mb_start_ghost);
-        stopping = false;
-    }
-    link->commitAudioSessionState(session); // Timeline modifications are complete, commit the results
+    auto session = process_session_state(engine_data, output_host_time);
 
-    //if (session.timeForIsPlaying() < session.isPlaying())
-    //{
-        const auto micros_per_sample = 1e6 / sample_rate;
-        for (auto sn = 0; sn < bufferToFill.numSamples; ++sn)
-        {
-            const auto sn_ghost_time = mb_start_ghost + std::chrono::microseconds(llround(sn * micros_per_sample));
-            if (session.timeForIsPlaying() < sn_ghost_time && !session.isPlaying())
-                continue;
-            const auto beat = session.beatAtTime(sn_ghost_time, quantum.getValue());
-            const auto awaiting_first_beat = beat < 0.;
-
-            const auto phase = session.phaseAtTime(sn_ghost_time, 1);
-            const auto prev_micros_time = sn_ghost_time - std::chrono::microseconds(llround(micros_per_sample));
-            const auto prev_micros_phase = session.phaseAtTime(prev_micros_time, 1);
-            const auto is_downbeat = phase < prev_micros_phase;
-
-            if (!awaiting_first_beat && is_downbeat)
-                play_sample(sn);
-        }
-    //}
+    if (is_playing)
+        play_sequencer(sample_rate, bufferToFill.numSamples, output_host_time, 
+                       engine_data.quantum, session);
     abe_synth.renderNextBlock(*bufferToFill.buffer, mb, 0, bufferToFill.numSamples);
 }
 void MainComponent::releaseResources()
@@ -173,7 +124,85 @@ void MainComponent::resized()
     for (auto* s : sliders)
         s->setBounds(bounds.removeFromTop(sl_height / sliders.size()).toNearestIntEdges());    
 }
-void MainComponent::play_sample(int sn)
+ableton::Link::SessionState MainComponent::process_session_state(
+    const EngineData& engine_data, 
+    const std::chrono::microseconds& output_host_time)
+{
+    auto session = link->captureAudioSessionState();
+
+    if (engine_data.request_start)
+        session.setIsPlaying(true, output_host_time);
+
+    if (engine_data.request_stop)
+        session.setIsPlaying(false, output_host_time);
+
+    if (!is_playing && session.isPlaying())
+    {   // Reset the timeline so that beat 0 corresponds to the time when transport starts
+        session.requestBeatAtStartPlayingTime(0, engine_data.quantum);
+        is_playing = true;
+    }
+    else if (is_playing && !session.isPlaying())
+        is_playing = false;
+
+    if (engine_data.requested_bpm > 0) // Set the newly requested tempo from the beginning of this buffer.
+        session.setTempo(engine_data.requested_bpm, output_host_time);
+
+    link->commitAudioSessionState(session); // Timeline modifications are complete, commit the results
+    return session;
+}
+void MainComponent::play_sequencer(
+    const double sample_rate, const int num_samples, const std::chrono::microseconds& time, 
+    const double quantum, const ableton::Link::SessionState& session)
+{
+    using namespace std::chrono;
+    const auto micros_per_sample = 1e6 / sample_rate; // number of microseconds that elapse between samples 
+    for (auto sn = 0; sn != num_samples; ++sn) // sn = sample no.
+    {
+        const auto sn_time = time + microseconds{ llround(sn * micros_per_sample) };
+        const auto prev_sn_time = sn_time - microseconds{ llround(micros_per_sample) };
+
+        const auto beat = session.beatAtTime(sn_time, quantum);
+        const auto phase = session.phaseAtTime(sn_time, 1);
+        const auto prev_sn_phase = session.phaseAtTime(prev_sn_time, 1);
+
+        const auto is_count_in = beat < 0.; // This beat occurs before the bar begins (anacrusis).
+        const auto is_downbeat = phase < prev_sn_phase; // The phase has wrapped since last sample.
+
+        if (!is_count_in && is_downbeat)
+            trigger_sample(sn);
+    }
+}
+std::chrono::microseconds MainComponent::calculate_latency_time(AudioIODevice* device, const double sample_rate, const int num_samples)
+{   // It is vital to ensure the audio buffer uses the host_time that the user actually hears (time at speaker)
+    using namespace std::chrono;
+    auto output_latency = microseconds{ llround(device->getOutputLatencyInSamples() / sample_rate) };
+    const double buffer_size = device->getCurrentBufferSizeSamples() / sample_rate;
+    output_latency += std::chrono::microseconds{ llround(1.0e6 * buffer_size) };
+    return output_latency; 
+}
+MainComponent::EngineData MainComponent::pull_engine_data()
+{
+    auto engine_data = EngineData{};
+    if (engine_data_guard.tryEnter())
+    {
+        engine_data.requested_bpm = shared_engine_data.requested_bpm;
+        shared_engine_data.requested_bpm = 0;
+
+        engine_data.request_start = shared_engine_data.request_start;
+        shared_engine_data.request_start = false;
+
+        engine_data.request_stop = shared_engine_data.request_stop;
+        shared_engine_data.request_stop = false;
+
+        lock_free_engine_data.quantum = shared_engine_data.quantum;
+        lock_free_engine_data.startstop_sync_on = shared_engine_data.startstop_sync_on;
+
+        engine_data_guard.exit();
+    }
+    engine_data.quantum = lock_free_engine_data.quantum;
+    return engine_data;
+}
+void MainComponent::trigger_sample(const int sn)
 {
     mb.addEvent(MidiMessage::noteOn(1, sampler_note, velocity.getValue()), sn);
 }
@@ -184,14 +213,13 @@ void MainComponent::timerCallback()
 void MainComponent::update_label()
 {
     const auto time = link->clock().micros();
-    const auto session = link->captureAppSessionState();    
-    const auto state_str = queing.getValue() ? "queueing.." : session.isPlaying() ? "playing" : stopping.getValue() ? "stopping" : "stopped";
-    const auto beat_str = String{ session.beatAtTime(time, quantum.getValue()), 3 }.paddedLeft(' ', 7);
-    const auto phase_str = String{ session.phaseAtTime(time, quantum.getValue()), 3 }.paddedLeft(' ', 7);
-    label.setText(String{ "Peers: " + num_peers.toString() + "\n"
-                        + "State: " + state_str + "\n"
-                        + "Beats: " + beat_str + "\n"
-                        + "Phase: " + phase_str + "\n" }, dontSendNotification);
+    const auto session = link->captureAppSessionState();
+    const auto beat = session.beatAtTime(time, shared_engine_data.quantum);
+    const auto phase = session.phaseAtTime(time, shared_engine_data.quantum);    
+    label.setText(String{ "Peers: " + String{ link->numPeers() }
+                        + "\nState: " + (beat < 0. ? "count-in.." : session.isPlaying() ? "playing" : "stopped")
+                        + "\nBeats: " + String{ beat, 3 }.paddedLeft(' ', 7)
+                        + "\nPhase: " + String{ phase, 3 }.paddedLeft(' ', 7) }, dontSendNotification);
 }
 void MainComponent::showDeviceSetting()
 {
@@ -215,7 +243,7 @@ void MainComponent::showDeviceSetting()
 
     dialog.runModal();
 }
-MainComponent::AbeSynth::AbeSynth(int sampler_note)
+MainComponent::AbeSynth::AbeSynth(const int sampler_note)
 {
     auto samples_folder = File::getCurrentWorkingDirectory();    
     while (!samples_folder.isRoot())
