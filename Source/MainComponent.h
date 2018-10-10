@@ -1,7 +1,7 @@
 #pragma once
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "ableton\Link.hpp"
-#define USE_BEATS_FOR_SEQUENCING 1
+#define USE_BEATS_FOR_SEQUENCING 1 // Select which "play_sequencer" method to use (see getNextAudioBlock())
 //==============================================================================
 class MainComponent   : public AudioAppComponent, public Timer
 {
@@ -25,10 +25,12 @@ private:
         bool request_stop;
         double quantum;
         bool startstop_sync;
+        JUCE_LEAK_DETECTOR(EngineData)
     };
     struct AbeSynth : Synthesiser
     {
         AbeSynth(const int);
+        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AbeSynth)
     };
     EngineData pull_engine_data();
     ableton::Link::SessionState process_session_state(const EngineData&, const Micros&);
@@ -47,7 +49,7 @@ private:
     //==============================================================================
     std::unique_ptr<ableton::Link> link;
     EngineData shared_engine_data, lock_free_engine_data;    
-    CriticalSection engine_data_guard;
+    std::mutex engine_data_guard;
     const int sampler_note = 60; // Temporary, more notes when more samples are added
     AbeSynth abe_synth;
     MidiBuffer mb;    

@@ -28,14 +28,14 @@ MainComponent::MainComponent()
     // GUI component callbacks
     tb_settings.onClick = [this] { show_audio_device_settings(); };
     tb_link.onClick = [this] { link->enable(tb_link.getToggleState()); };
-    tb_play.onClick = [this] { const ScopedLock lock(engine_data_guard); 
+    tb_play.onClick = [this] { std::lock_guard<std::mutex> lock{ engine_data_guard };
                                shared_engine_data.request_start = true; };
-    tb_stop.onClick = [this] { const ScopedLock lock(engine_data_guard); 
+    tb_stop.onClick = [this] { std::lock_guard<std::mutex> lock{ engine_data_guard };
                                shared_engine_data.request_stop = true; };
     tb_sync.onClick = [this] { link->enableStartStopSync(tb_sync.getToggleState()); };
-    sl_quantum.onValueChange = [this] { const ScopedLock lock(engine_data_guard); 
+    sl_quantum.onValueChange = [this] { std::lock_guard<std::mutex> lock{ engine_data_guard };
                                         shared_engine_data.quantum = sl_quantum.getValue(); };
-    sl_bpm.onValueChange = [this] { const ScopedLock lock(engine_data_guard); 
+    sl_bpm.onValueChange = [this] { std::lock_guard<std::mutex> lock{ engine_data_guard };
                                     shared_engine_data.requested_bpm = sl_bpm.getValue(); };
     // GUI component initialization
     tb_link.setClickingTogglesState(true);
@@ -84,7 +84,6 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
     auto* current_device = deviceManager.getCurrentAudioDevice();
     if (!current_device || !link)
         return;
-
     const auto sample_rate = current_device->getCurrentSampleRate();
     const auto micros_per_sample = 1e6 / sample_rate; // number of microseconds that elapse between samples 
 
@@ -200,7 +199,7 @@ void MainComponent::play_sequencer_phase(const double micros_per_sample, const i
 MainComponent::EngineData MainComponent::pull_engine_data()
 {   // Safely operate on data isolated from user changes.
     auto engine_data = EngineData{};
-    if (engine_data_guard.tryEnter())
+    if (engine_data_guard.try_lock())
     {
         engine_data.requested_bpm = shared_engine_data.requested_bpm;
         shared_engine_data.requested_bpm = 0;
@@ -214,8 +213,10 @@ MainComponent::EngineData MainComponent::pull_engine_data()
         lock_free_engine_data.quantum = shared_engine_data.quantum;
         lock_free_engine_data.startstop_sync = shared_engine_data.startstop_sync;
 
-        engine_data_guard.exit();
+        engine_data_guard.unlock();
     }
+    else
+        DBG("entry failed");
     engine_data.quantum = lock_free_engine_data.quantum;
     return engine_data;
 }
@@ -249,7 +250,7 @@ void MainComponent::debug_state(const bool beats, const int sn, const Micros& sn
         // This is computed using (sn_time - micros_per_sample), 
         // i.e. the previous sample number may actually have had a slightly different
         // time computed when the computation took place.
-        << (beats ? "" : " | prev_sn_time: " + prev_sn_time.count())
+        << (beats ? "" : " | prev_sn_time: " + String{ prev_sn_time.count() })
 
         << " | beat: " << double_str(beat)
         << (beats ? "" : " | phase: " + double_str(phase))
@@ -290,20 +291,20 @@ MainComponent::AbeSynth::AbeSynth(const int sampler_note)
         }
     }
     AudioFormatManager afm;
-    afm.registerFormat(new WavAudioFormat(), true);    
-    auto add_sound = [this, &sampler_note, &afm](const File& file, const int note)
+    afm.registerFormat(new WavAudioFormat{}, true);
+    auto add_sound = [this, &sampler_note, &samples_folder, &afm](const String& file_name, const int note)
     {
+        const auto file = File{ samples_folder.getChildFile(file_name) };
         if (file.existsAsFile())
         {
             auto note_range = BigInteger{};
             note_range.setBit(note);
-            auto* reader = afm.createReaderFor(file);
+            std::unique_ptr<AudioFormatReader> reader{ afm.createReaderFor(file) };
             addSound(new SamplerSound(String{}, *reader, note_range, note, 0.01, 0.1,
-                                      reader->lengthInSamples / reader->sampleRate));
-            reader->~AudioFormatReader();
+                                      reader->lengthInSamples / reader->sampleRate));            
         }
     };
-    add_sound(samples_folder.getChildFile("Kick.wav"), sampler_note);
+    add_sound("Kick.wav", sampler_note);
     addVoice(new SamplerVoice{});
 }
 // GUI Methods ============================================================================
