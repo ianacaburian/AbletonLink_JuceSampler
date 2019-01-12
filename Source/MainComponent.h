@@ -1,6 +1,6 @@
 #pragma once
 #include "../JuceLibraryCode/JuceHeader.h"
-#include "ableton\Link.hpp"
+#include "ableton/Link.hpp"
 #define USE_BEATS_FOR_SEQUENCING 1 // Select which "play_sequencer" method to use (see getNextAudioBlock())
 //==============================================================================
 class MainComponent   : public AudioAppComponent, public Timer
