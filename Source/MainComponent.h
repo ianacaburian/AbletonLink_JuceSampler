@@ -40,7 +40,6 @@ private:
     void process_session_state(const EngineData& engine_data);
     void trigger_sampler(const double sample_rate, const double quantum, const int buffer_size);
     void show_audio_device_settings();
-    static String double_str(const double d);
     //==============================================================================
     
     void paint(Graphics& g) override;
@@ -58,7 +57,6 @@ private:
     
     AbeSynth abe_synth;
     MidiBuffer midi_buffer;
-    std::vector<double> beat_map;
     
     std::chrono::microseconds output_time;
     std::uint64_t sample_time = 0;
@@ -66,7 +64,7 @@ private:
     
     static constexpr const char* sample_file_name = "Kick.wav";
     static constexpr double beat_length = 1.;
-    static constexpr int middle_c = 60;    
+    static constexpr int middle_c = 60;
     
     // GUI Components
     TextButton tb_settings, tb_link, tb_play, tb_stop, tb_sync;

@@ -174,7 +174,7 @@ void MainComponent::trigger_sampler(const double sample_rate, const double quant
         if (session->beatAtTime(host_time, quantum) >= 0.) {
             
             // If the phase wraps around between the last sample and the
-            // current one with respect to a 1 beat quantum, then a click
+            // current one with respect to a 1 beat quantum, then a sample trigger
             // should occur.
             if (session->phaseAtTime(host_time, beat_length)
                 < session->phaseAtTime(prev_host_time, beat_length)) {
@@ -278,6 +278,7 @@ void MainComponent::timerCallback()
 // ========================================================================================
 void MainComponent::update_label()
 {
+    auto double_str = [](const double d) { return String::formatted("%8.3f", d); };
     const auto time = link->clock().micros();
     const auto app_session = link->captureAppSessionState();
     const auto beat = app_session.beatAtTime(time, shared_engine_data.quantum);
@@ -289,4 +290,4 @@ void MainComponent::update_label()
         + "\nPeers: " + String{ link->numPeers() }
         , dontSendNotification);
 }
-String MainComponent::double_str(const double d) { return String::formatted("%8.3f", d); }
+
