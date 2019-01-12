@@ -3,7 +3,10 @@
 - Open a second Link app such as Ableton Live on the same machine or another machine connected to the same LAN
 - Click Link and StartStopSync to enable peers to control bpm and transport
 - Adjust BPM in the second app while playing to witness glorious synchronization.
-- Enable startstopsync in Ableton preferences to also have the ability to control transport from the second app.
+- Enable startstopsync in Ableton preferences to also have the ability to control transport from the second app.    
+
+![alt text](https://github.com/ianacaburian/AbletonLink_JuceSampler/blob/master/ScreenShot.png) .   
+
 ## How to build your own Juce project using Ableton Link
 #### The following instructions are already carried out for this project, they are simply provided for guidance on how to build new Juce projects that need Ableton Link.
 ### 1. Add Ableton Link dependency (via git command line)
