@@ -18,7 +18,7 @@ Then, because link also depends on another dependency, ASIO, it's best to recurs
 2. "link/modules/asio-standalone/asio/include"
 - These can be added in Projucer (for all builds) in "Project Settings -> Header Search Paths".
 - Because this project places the link dependency in a "Dependencies" folder, the Header Search Paths field for this project looks like this:    
->../../Dependencies/link/include .
+>../../Dependencies/link/include .   
 >../../Dependencies/link/modules/asio-standalone/asio/include
 
 ### 3. Configure Projucer
@@ -31,8 +31,8 @@ In the Projucer, go to the MacOSX and/or iOS IDE exporters (e.g. Xcode) and incl
 `LINK_PLATFORM_WINDOWS=1` .   
 - If you encounter further problems, you might need to also add this on a separate line:    
 `_WIN32_WINNT=0x0501` .   
-- For Windows, Link requires compiler flags to be provided. Below "Extra Prepocessor Definitions" you will find "Extra Compiler Flags" where you must add:
-/D_SCL_SECURE_NO_WARNINGS /DLINK_BUILD_VLD=1 /MP /EHsc /wd4061 /wd4265 /wd4350 /wd4355 /wd4365 /wd4371 /wd4503 /wd4510 /wd4512 /wd4514 /wd4571 /wd4610 /wd4625 /wd4626 /wd4628 /wd4640 /wd4710 /wd4711 /wd4738 /wd4820 /wd4464 /wd4548 /wd4623 /wd4868 /wd5026 /wd5027 /wd4987 /wd4774 /wd5039 /wd4917
+- For Windows, Link requires compiler flags to be provided. Below "Extra Prepocessor Definitions" you will find "Extra Compiler Flags" where you must add:    
+`/D_SCL_SECURE_NO_WARNINGS /DLINK_BUILD_VLD=1 /MP /EHsc /wd4061 /wd4265 /wd4350 /wd4355 /wd4365 /wd4371 /wd4503 /wd4510 /wd4512 /wd4514 /wd4571 /wd4610 /wd4625 /wd4626 /wd4628 /wd4640 /wd4710 /wd4711 /wd4738 /wd4820 /wd4464 /wd4548 /wd4623 /wd4868 /wd5026 /wd5027 /wd4987 /wd4774 /wd5039 /wd4917`
 ### 4. Include Header Files
 - The necessary include:    
 #include <ableton/Link.hpp>
