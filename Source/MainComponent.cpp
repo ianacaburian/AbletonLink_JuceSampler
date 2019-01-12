@@ -241,7 +241,7 @@ MainComponent::AbeSynth::AbeSynth(const int sampler_note)
                                               .replace ("FLNM", "\n" + samples_folder.getFullPathName()) + "\n\n");
         }
     };
-    add_sound("Kick.wav", sampler_note);
+    add_sound(sample_file_name, sampler_note);
     addVoice(new SamplerVoice{});
     addVoice(new SamplerVoice{});
 }

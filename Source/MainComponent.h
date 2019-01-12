@@ -59,6 +59,7 @@ private:
     std::chrono::microseconds output_time;
     std::uint64_t sample_time = 0;
     bool is_playing = false;
+    static constexpr const char* sample_file_name = "Kick.wav";
     static constexpr double beat_length = 1.;
     static constexpr int middle_c = 60;
     
