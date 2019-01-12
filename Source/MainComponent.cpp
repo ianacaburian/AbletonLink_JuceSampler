@@ -5,7 +5,7 @@ MainComponent::MainComponent()
     , lock_free_engine_data{ shared_engine_data }
     , abe_synth{ middle_c }
 
-// GUI Components
+    // GUI Components
     , tb_settings{ "Audio Settings" }
     , tb_link{ "Link" }
     , tb_play{ "Play" }
@@ -18,8 +18,9 @@ MainComponent::MainComponent()
     // GUI initialization
     for (auto* c : std::initializer_list<Component*>{ &tb_settings, &tb_link, &tb_play, &tb_stop, &tb_sync, 
                                                       &sl_quantum, &sl_bpm, &sl_velocity,
-                                                      &lb_quantum, &lb_bpm, &lb_velocity, &main_display })
-        addAndMakeVisible(c);    
+                                                      &lb_quantum, &lb_bpm, &lb_velocity, &main_display }) {
+        addAndMakeVisible(c);
+    }
     setSize(600, 400);
     startTimerHz(30);
 
@@ -116,8 +117,7 @@ void MainComponent::calculate_output_time(const double sample_rate, const int bu
 MainComponent::EngineData MainComponent::pull_engine_data()
 {   // Safely operate on data isolated from user changes.
     auto engine_data = EngineData{};
-    if (engine_data_guard.try_lock())
-    {
+    if (engine_data_guard.try_lock()) {
         engine_data.requested_bpm = shared_engine_data.requested_bpm;
         shared_engine_data.requested_bpm = 0;
         
@@ -148,8 +148,7 @@ void MainComponent::process_session_state(const EngineData& engine_data)
     if (engine_data.request_stop)
         session->setIsPlaying(false, output_time);
 
-    if (!is_playing && session->isPlaying())
-    {   // Reset the timeline so that beat 0 corresponds to the time when transport starts
+    if (!is_playing && session->isPlaying()) {   // Reset the timeline so that beat 0 corresponds to the time when transport starts
         session->requestBeatAtTime(0., output_time, engine_data.quantum);
         is_playing = true;
     }
@@ -161,25 +160,25 @@ void MainComponent::process_session_state(const EngineData& engine_data)
 
     link->commitAudioSessionState(*session); // Timeline modifications are complete, commit the results
 }
+// ========================================================================================
 void MainComponent::trigger_sampler(const double sample_rate, const double quantum, const int buffer_size)
 {   // Taken from Ableton's linkhut example found on their github.
     const auto micros_per_sample = 1.0e6 / sample_rate;
-    for (std::size_t i = 0; i < buffer_size; ++i)
-    {
+    for (std::size_t i = 0; i < buffer_size; ++i) {
         // Compute the host time for this sample and the last.
-        const auto hostTime = output_time + std::chrono::microseconds(llround(i * micros_per_sample));
-        const auto lastSampleHostTime = hostTime - std::chrono::microseconds(llround(micros_per_sample));
+        const auto host_time = output_time + std::chrono::microseconds(llround(i * micros_per_sample));
+        const auto prev_host_time = host_time - std::chrono::microseconds(llround(micros_per_sample));
         
         // Only make sound for positive beat magnitudes. Negative beat
         // magnitudes are count-in beats.
-        if (session->beatAtTime(hostTime, quantum) >= 0.)
-        {
+        if (session->beatAtTime(host_time, quantum) >= 0.) {
+            
             // If the phase wraps around between the last sample and the
             // current one with respect to a 1 beat quantum, then a click
             // should occur.
-            if (session->phaseAtTime(hostTime, beat_length)
-                < session->phaseAtTime(lastSampleHostTime, beat_length))
-            {
+            if (session->phaseAtTime(host_time, beat_length)
+                < session->phaseAtTime(prev_host_time, beat_length)) {
+                
                 const auto float_velocity = static_cast<float>(sl_velocity.getValue());
                 const auto midi_msg = MidiMessage::noteOn(1, middle_c, float_velocity);
                 midi_buffer.addEvent(midi_msg, static_cast<int>(i));
@@ -223,11 +222,9 @@ MainComponent::AbeSynth::AbeSynth(const int sampler_note)
     }
     AudioFormatManager afm;
     afm.registerFormat(new WavAudioFormat{}, true);
-    auto add_sound = [&](const String& file_name, const int note)
-    {
+    auto add_sound = [&](const String& file_name, const int note) {
         const auto file = File{ samples_folder.getChildFile(file_name) };
-        if (file.existsAsFile())
-        {
+        if (file.existsAsFile()) {
             auto note_range = BigInteger{};
             note_range.setBit(note);
             std::unique_ptr<AudioFormatReader> reader{ afm.createReaderFor(file) };
@@ -268,8 +265,7 @@ void MainComponent::resized()
 
     const auto sl_height = bounds.getHeight();
     auto&& sliders = std::initializer_list<Component*>{ &sl_quantum, &sl_bpm, &sl_velocity };
-    for (auto* s : sliders)
-    {
+    for (auto* s : sliders) {
         auto&& slider_bounds = bounds.removeFromTop(sl_height / sliders.size());
         s->setBounds(slider_bounds.removeFromRight(0.8f * width).toNearestIntEdges());
     }
@@ -283,11 +279,11 @@ void MainComponent::timerCallback()
 void MainComponent::update_label()
 {
     const auto time = link->clock().micros();
-    const auto session = link->captureAppSessionState();
-    const auto beat = session.beatAtTime(time, shared_engine_data.quantum);
-    const auto phase = session.phaseAtTime(time, shared_engine_data.quantum);
+    const auto app_session = link->captureAppSessionState();
+    const auto beat = app_session.beatAtTime(time, shared_engine_data.quantum);
+    const auto phase = app_session.phaseAtTime(time, shared_engine_data.quantum);
     main_display.setText(
-        String{ (beat < 0. ? "count-in" : session.isPlaying() ? " playing" : " stopped") }
+        String{ (beat < 0. ? "count-in" : app_session.isPlaying() ? " playing" : " stopped") }
         + "\nBeats: " +  double_str(beat)
         + "\nPhase: " + double_str(phase)
         + "\nPeers: " + String{ link->numPeers() }
