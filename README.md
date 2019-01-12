@@ -14,8 +14,8 @@
 `git submodule update --init --recursive` .   
 ### 2. Include Header Search Paths
 - Link requires 2 paths to be included in Juce:
-1. "link/include"
-2. "link/modules/asio-standalone/asio/include"
+1. `link/include`
+2. `link/modules/asio-standalone/asio/include`
 - These can be added in Projucer (for all builds) in "Project Settings -> Header Search Paths".
 - Because this project places the link dependency in a "Dependencies" folder, the Header Search Paths field for this project looks like this:    
 >../../Dependencies/link/include .   
@@ -35,9 +35,9 @@ In the Projucer, go to the MacOSX and/or iOS IDE exporters (e.g. Xcode) and incl
 `/D_SCL_SECURE_NO_WARNINGS /DLINK_BUILD_VLD=1 /MP /EHsc /wd4061 /wd4265 /wd4350 /wd4355 /wd4365 /wd4371 /wd4503 /wd4510 /wd4512 /wd4514 /wd4571 /wd4610 /wd4625 /wd4626 /wd4628 /wd4640 /wd4710 /wd4711 /wd4738 /wd4820 /wd4464 /wd4548 /wd4623 /wd4868 /wd5026 /wd5027 /wd4987 /wd4774 /wd5039 /wd4917`
 ### 4. Include Header Files
 - The necessary include:    
-#include <ableton/Link.hpp>
+`#include <ableton/Link.hpp>`
 - Although it's optional, I strongly recommend using, and thus including, the HostTimeFilter for the most accurate Link synchronization in Juce projects:    
-#include <ableton/link/HostTimeFilter.hpp>
+`#include <ableton/link/HostTimeFilter.hpp>`
 ## Guidelines on implementing synchronization in your project
 #### These guidelines are intended to be specific to Juce and an extension of the advice provided by Ableton on their github readme. Go there first for the basics, then come back here for some time savers.
 ### 1. Use the HostTimeFilter for SessionState synchronization.
@@ -54,7 +54,7 @@ See this project's calculate_output_time() method.
 
 ### 3. Prepare for time jumps and buffer overlaps.
 Coming from vst development where samples and ppq beats get fed into your plugin at exactly the moment you expect them to come, your app may glitch out when adding Link and not preparing for these jumps and overlaps. At each buffer boundary the beat or phase values provided by link (via beatAtTime() and phaseAtTime) may show that they jump irregularly from buffer cycle to buffer cycle (e.g. buffer 1 might have beat values of 0.11 to 0.13 for samples 0 and 511, then buffer 2 has already jumped to values of 0.21 to 0.23), or overlap might occur (e.g. buffer 1 has 0.11 to 0.13 and buffer 2 has 0.12 to 0.14).    
-In my experience, these things must be handled to prevent any unwanted artifacts. There are many approaches you can take, where my suggestions may be too convoluted or not accurate enough for your situation so I leave this to you. Seeing as Link uses real-time values for its algorithms, these can be hard to debug without setting up some test harness or mocking framework.
+In my experience, these things must be handled to prevent any unwanted artifacts. There are many approaches you can take, where my suggestions may be too convoluted or not accurate enough for your situation so I leave this to you. Seeing as Link uses real-time values for its algorithms, these can be hard to debug without setting up some test harness or mocking framework. Just don't mistake time jumps or buffer overlaps as bugs themselves, these are occasional, but normal.
 
 ### 4. The std::chrono library provides for creating your own time types
 Howard Hinnant (the almighty creator of time) explains this best in his talk at cppcon 2016. In this project, microseconds to samples is converted explicitly using the formula micros_to_samples = 1.0e6 / sample_rate. However, the chrono library provides conveniences to create types that do these conversions automatically.
