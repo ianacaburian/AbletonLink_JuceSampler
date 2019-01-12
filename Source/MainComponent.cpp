@@ -1,13 +1,11 @@
 #include "MainComponent.h"
 // ========================================================================================
 MainComponent::MainComponent()
-    : shared_engine_data({ 0., false, false, 4., false })
+    : shared_engine_data({ 0., false, false, 1., false })
     , lock_free_engine_data{ shared_engine_data }
-    , abe_synth{ sampler_note }
-    , buffer_sn{ 0 }
-    , prev_beat_sn{ 0 }
-    , is_playing{ false }
-    , console_line_count{ 0 }
+    , abe_synth{ middle_c }
+
+// GUI Components
     , tb_settings{ "Audio Settings" }
     , tb_link{ "Link" }
     , tb_play{ "Play" }
@@ -80,120 +78,39 @@ void MainComponent::prepareToPlay (int /*samplesPerBlockExpected*/, double sampl
 }
 // ========================================================================================
 void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill)
-{    
+{
     auto* current_device = deviceManager.getCurrentAudioDevice();
     if (!current_device || !link)
         return;
-    const auto sample_rate = current_device->getCurrentSampleRate();
-    const auto micros_per_sample = 1e6 / sample_rate; // number of microseconds that elapse between samples 
-
-    // Synchronize host time to reference the point when its output reaches the speaker.
-    auto output_host_time = link->clock().micros();
-    output_host_time += Micros{ llround(micros_per_sample * current_device->getOutputLatencyInSamples()) };
-    
-    // Clear buffers
-    mb.clear();
+    midi_buffer.clear();
     bufferToFill.clearActiveBufferRegion();
+    
+    const auto sample_rate = current_device->getCurrentSampleRate();
+    calculate_output_time(sample_rate, bufferToFill.numSamples);
 
-    // Extract info from link and modify its state.
+    // Extract info from link and modify its state as per user requests.
     const auto engine_data = pull_engine_data();
-    auto session = process_session_state(engine_data, output_host_time);
-
-    // Sequence the synth. 
-    if (is_playing)
-    {
-        if (USE_BEATS_FOR_SEQUENCING) // Beats: sequencer-focused approach, much more simpler than the phase approach.
-            play_sequencer_beats(micros_per_sample, bufferToFill.numSamples, output_host_time, session);
-
-        else // Phase: audio-based approach (mirrors Ableton's "linkhut" example more closely)
-            play_sequencer_phase(micros_per_sample, bufferToFill.numSamples, output_host_time, engine_data.quantum, session);
+    process_session_state(engine_data);
+    
+    // Play the beat
+    if (is_playing) {
+        trigger_sampler(sample_rate, engine_data.quantum, bufferToFill.numSamples);
     }
-    abe_synth.renderNextBlock(*bufferToFill.buffer, mb, 0, bufferToFill.numSamples);
-
-    // Update "debug-only" vars
-    buffer_sn += bufferToFill.numSamples;
-    ++buffer_cycle_count;
+    abe_synth.renderNextBlock(*bufferToFill.buffer, midi_buffer, 0, bufferToFill.numSamples);
+    sample_time += bufferToFill.numSamples;
 }
 // ========================================================================================
 void MainComponent::releaseResources()
 {}
 // ========================================================================================
-ableton::Link::SessionState MainComponent::process_session_state(const EngineData& engine_data, 
-                                                                 const Micros& output_host_time)
+// Link Synchronization Methods
+// ========================================================================================
+void MainComponent::calculate_output_time(const double sample_rate, const int buffer_size)
 {
-    auto session = link->captureAudioSessionState();
-
-    if (engine_data.request_start)
-        session.setIsPlaying(true, output_host_time);
-
-    if (engine_data.request_stop)
-        session.setIsPlaying(false, output_host_time);
-
-    if (!is_playing && session.isPlaying())
-    {   // Reset the timeline so that beat 0 corresponds to the time when transport starts
-        session.requestBeatAtStartPlayingTime(0, engine_data.quantum);
-        is_playing = true;
-    }
-    else if (is_playing && !session.isPlaying())
-        is_playing = false;
-
-    if (engine_data.requested_bpm > 0) // Set the newly requested tempo from the beginning of this buffer.
-        session.setTempo(engine_data.requested_bpm, output_host_time);
-
-    link->commitAudioSessionState(session); // Timeline modifications are complete, commit the results
-    return session;
-}
-// ========================================================================================
-void MainComponent::play_sequencer_beats(const double micros_per_sample, const int num_samples, 
-                                         const Micros host_time, const ableton::Link::SessionState& session)
-{   // Simply looks at the beat at the start of the buffer, and the beat at the end of the buffer.        
-    // The synth is triggered when a new beat occurs within this buffer cycle.
-    const auto beat = session.beatAtTime(host_time, 1);
-    const auto next_beat = ceil(beat);
-    const auto next_beat_time = session.timeAtBeat(next_beat, 1);
-    const auto end_time = host_time + Micros{ llround(micros_per_sample * num_samples) };
-
-    if (next_beat_time < end_time) // Downbeat occurs within this buffer cycle.
-    {   
-        // microseconds from the buffer start to the next beat.
-        const auto micros_to_next_beat = (next_beat_time - host_time).count();
-
-        // sample number of the next beat.
-        const auto next_beat_sn = static_cast<int>(llround(micros_to_next_beat / micros_per_sample));
-
-        // buffer the next midi message
-        const auto midi_msg = MidiMessage::noteOn(1, sampler_note, static_cast<float>(sl_velocity.getValue()));
-        mb.addEvent(midi_msg, next_beat_sn);
-        
-        // print state info to console
-        debug_state(true, next_beat_sn, next_beat_time, next_beat, midi_msg);
-    }
-}
-// ========================================================================================
-void MainComponent::play_sequencer_phase(const double micros_per_sample, const int num_samples, 
-                                         const Micros host_time, const double quantum, 
-                                         const ableton::Link::SessionState& session)
-{   // This is taken from renderMetronome in Ableton's "linkhut" example.
-    // Each sample is checked to see if the phase has wrapped, meaning that a downbeat occurs.
-    for (auto sn = 0; sn != num_samples; ++sn)
-    {
-        const auto sn_time = host_time + Micros{ llround(sn * micros_per_sample) };
-        const auto prev_sn_time = sn_time - Micros{ llround(micros_per_sample) };
-
-        const auto beat = session.beatAtTime(sn_time, quantum);
-        const auto phase = session.phaseAtTime(sn_time, 1);
-        const auto prev_sn_phase = session.phaseAtTime(prev_sn_time, 1);
-
-        const auto is_count_in = beat < 0.; // This beat occurs before the bar begins (anacrusis).
-        const auto is_downbeat = phase < prev_sn_phase; // The phase has wrapped since last sample.
-
-        if (!is_count_in && is_downbeat) // trigger sample
-        {
-            const auto midi_msg = MidiMessage::noteOn(1, sampler_note, static_cast<float>(sl_velocity.getValue()));
-            mb.addEvent(midi_msg, sn);
-            debug_state(false, sn, sn_time, beat, midi_msg, prev_sn_time, phase, prev_sn_phase);
-        }
-    }
+    // Synchronize host time to reference the point when its output reaches the speaker.
+    const auto host_time =  host_time_filter.sampleTimeToHostTime(sample_time);
+    const auto output_latency = std::chrono::microseconds{ std::llround(1.0e6 * buffer_size / sample_rate) };
+    output_time = output_latency + host_time;
 }
 // ========================================================================================
 MainComponent::EngineData MainComponent::pull_engine_data()
@@ -203,16 +120,16 @@ MainComponent::EngineData MainComponent::pull_engine_data()
     {
         engine_data.requested_bpm = shared_engine_data.requested_bpm;
         shared_engine_data.requested_bpm = 0;
-
+        
         engine_data.request_start = shared_engine_data.request_start;
         shared_engine_data.request_start = false;
-
+        
         engine_data.request_stop = shared_engine_data.request_stop;
         shared_engine_data.request_stop = false;
-
+        
         lock_free_engine_data.quantum = shared_engine_data.quantum;
         lock_free_engine_data.startstop_sync = shared_engine_data.startstop_sync;
-
+        
         engine_data_guard.unlock();
     }
     else
@@ -221,44 +138,57 @@ MainComponent::EngineData MainComponent::pull_engine_data()
     return engine_data;
 }
 // ========================================================================================
-void MainComponent::debug_state(const bool beats, const int sn, const Micros& sn_time, 
-                                const double beat, const MidiMessage& midi_msg, const Micros& prev_sn_time,
-                                const double phase, const double prev_sn_phase)
-{    
-    if (beat < 1.)
-    {
-        prev_beat_sn = buffer_cycle_count = 0;
-        buffer_sn = sn;        
+void MainComponent::process_session_state(const EngineData& engine_data)
+{
+    session = std::make_unique<ableton::Link::SessionState>(link->captureAudioSessionState());
+
+    if (engine_data.request_start)
+        session->setIsPlaying(true, output_time);
+
+    if (engine_data.request_stop)
+        session->setIsPlaying(false, output_time);
+
+    if (!is_playing && session->isPlaying())
+    {   // Reset the timeline so that beat 0 corresponds to the time when transport starts
+        session->requestBeatAtTime(0., output_time, engine_data.quantum);
+        is_playing = true;
     }
-    const auto global_sn = buffer_sn + sn;
+    else if (is_playing && !session->isPlaying())
+        is_playing = false;
 
-    auto double_str = [this](const double d)->String { return String{ d, 5 }.paddedLeft(' ', 8); };
-    DBG(String{ ++console_line_count }.paddedLeft(' ', 3)
+    if (engine_data.requested_bpm > 0) // Set the newly requested tempo from the beginning of this buffer.
+        session->setTempo(engine_data.requested_bpm, output_time);
 
-        // The number of elapsed buffer cycles is counted, starting at 0 when play is started.
-        << " | buffer: " << String{ buffer_cycle_count }.paddedLeft(' ', 4)
-
-        // The number of samples since last beat, this should be fairly consistent when tempo is steady.
-        << " | sn_to_last_beat: " << String{ global_sn - prev_beat_sn }.paddedLeft(' ', 7)
-
-        // The number of elapsed samples is counted beyond each buffer cycle, starting at 0 when play is started.
-        << " | sn: " << String{ global_sn }.paddedLeft(' ', 7)
-
-        // The host time that has been computed for the above sample number. 
-        << " | sn_time: " << sn_time.count()
-
-        // This is computed using (sn_time - micros_per_sample), 
-        // i.e. the previous sample number may actually have had a slightly different
-        // time computed when the computation took place.
-        << (beats ? "" : " | prev_sn_time: " + String{ prev_sn_time.count() })
-
-        << " | beat: " << double_str(beat)
-        << (beats ? "" : " | phase: " + double_str(phase))
-        << (beats ? "" : " | prev_sn_phase: " + double_str(prev_sn_phase)) // this is derived from prev_sn_time.
-        << " | " << midi_msg.getDescription());
- 
-    prev_beat_sn = global_sn;
+    link->commitAudioSessionState(*session); // Timeline modifications are complete, commit the results
 }
+void MainComponent::trigger_sampler(const double sample_rate, const double quantum, const int buffer_size)
+{   // Taken from Ableton's linkhut example found on their github.
+    const auto micros_per_sample = 1.0e6 / sample_rate;
+    for (std::size_t i = 0; i < buffer_size; ++i)
+    {
+        // Compute the host time for this sample and the last.
+        const auto hostTime = output_time + std::chrono::microseconds(llround(i * micros_per_sample));
+        const auto lastSampleHostTime = hostTime - std::chrono::microseconds(llround(micros_per_sample));
+        
+        // Only make sound for positive beat magnitudes. Negative beat
+        // magnitudes are count-in beats.
+        if (session->beatAtTime(hostTime, quantum) >= 0.)
+        {
+            // If the phase wraps around between the last sample and the
+            // current one with respect to a 1 beat quantum, then a click
+            // should occur.
+            if (session->phaseAtTime(hostTime, beat_length)
+                < session->phaseAtTime(lastSampleHostTime, beat_length))
+            {
+                const auto float_velocity = static_cast<float>(sl_velocity.getValue());
+                const auto midi_msg = MidiMessage::noteOn(1, middle_c, float_velocity);
+                midi_buffer.addEvent(midi_msg, static_cast<int>(i));
+            }
+        }
+    }
+}
+// ========================================================================================
+// Utility Audio Methods
 // ========================================================================================
 void MainComponent::show_audio_device_settings()
 {
@@ -278,21 +208,22 @@ void MainComponent::show_audio_device_settings()
 MainComponent::AbeSynth::AbeSynth(const int sampler_note)
 {
     auto samples_folder = File::getCurrentWorkingDirectory();    
-    while (!samples_folder.isRoot())
-    {
+    while (!samples_folder.isRoot()) {
         samples_folder = samples_folder.getParentDirectory();
-        if (samples_folder.getFileName() == "AbeLinkolnsJuce")
-        {
+        if (samples_folder.getFileName() == "AbletonLink_JuceSampler") {
             samples_folder = samples_folder.getChildFile("Samples");
-            if (samples_folder.exists())
-                break;
-            else
-                return;
+            break;
         }
+    }
+    if (samples_folder.getFileName() != "Samples") {
+        AlertWindow::showMessageBoxAsync (AlertWindow::WarningIcon,
+                                          TRANS("Samples folder not found..."),
+                                          TRANS("There was an error while trying to find the samples folder"));
+        return;
     }
     AudioFormatManager afm;
     afm.registerFormat(new WavAudioFormat{}, true);
-    auto add_sound = [this, &sampler_note, &samples_folder, &afm](const String& file_name, const int note)
+    auto add_sound = [&](const String& file_name, const int note)
     {
         const auto file = File{ samples_folder.getChildFile(file_name) };
         if (file.existsAsFile())
@@ -303,10 +234,18 @@ MainComponent::AbeSynth::AbeSynth(const int sampler_note)
             addSound(new SamplerSound(String{}, *reader, note_range, note, 0.01, 0.1,
                                       reader->lengthInSamples / reader->sampleRate));            
         }
+        else {
+            AlertWindow::showMessageBoxAsync (AlertWindow::WarningIcon,
+                                              TRANS("Failed to open file..."),
+                                              TRANS("There was an error while trying to load the file: FLNM")
+                                              .replace ("FLNM", "\n" + samples_folder.getFullPathName()) + "\n\n");
+        }
     };
     add_sound("Kick.wav", sampler_note);
     addVoice(new SamplerVoice{});
+    addVoice(new SamplerVoice{});
 }
+// ========================================================================================
 // GUI Methods ============================================================================
 // ========================================================================================
 void MainComponent::paint(Graphics& g)
@@ -325,7 +264,7 @@ void MainComponent::resized()
         b->setBounds(button_bounds.removeFromLeft(width / buttons.size()).toNearestIntEdges());
 
     main_display.setBounds(bounds.removeFromTop(bounds.getHeight() / 2).toNearestIntEdges().withRight(tb_stop.getRight()));
-    main_display.setFont(Font{ "consolas", "mono", main_display.getHeight() / 4.f });
+    main_display.setFont(Font{ Font::getDefaultMonospacedFontName(), "mono", main_display.getHeight() / 4.f });
 
     const auto sl_height = bounds.getHeight();
     auto&& sliders = std::initializer_list<Component*>{ &sl_quantum, &sl_bpm, &sl_velocity };
@@ -347,8 +286,11 @@ void MainComponent::update_label()
     const auto session = link->captureAppSessionState();
     const auto beat = session.beatAtTime(time, shared_engine_data.quantum);
     const auto phase = session.phaseAtTime(time, shared_engine_data.quantum);
-    main_display.setText(String{ "Peers: " + String{ link->numPeers() }
-                        + "\n" + (beat < 0. ? "count-in" : session.isPlaying() ? " playing" : " stopped")
-                        + "\nBeats: " + String{ beat, 3 }.paddedLeft(' ', 8)
-                        + "\nPhase: " + String{ phase, 3 }.paddedLeft(' ', 8) }, dontSendNotification);
+    main_display.setText(
+        String{ (beat < 0. ? "count-in" : session.isPlaying() ? " playing" : " stopped") }
+        + "\nBeats: " +  double_str(beat)
+        + "\nPhase: " + double_str(phase)
+        + "\nPeers: " + String{ link->numPeers() }
+        , dontSendNotification);
 }
+String MainComponent::double_str(const double d) { return String::formatted("%8.3f", d); }

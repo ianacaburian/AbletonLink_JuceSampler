@@ -4,11 +4,9 @@
 #include <ableton/Link.hpp>
 #include <ableton/link/HostTimeFilter.hpp>
 
-#define USE_BEATS_FOR_SEQUENCING 1 // Select which "play_sequencer" method to use (see getNextAudioBlock())
 //==============================================================================
 class MainComponent   : public AudioAppComponent, public Timer
 {
-    using Micros = std::chrono::microseconds;
 public:
     //==============================================================================
     MainComponent();
@@ -35,13 +33,12 @@ private:
         AbeSynth(const int);
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AbeSynth)
     };
+    void calculate_output_time(const double sample_rate, const int buffer_size);
     EngineData pull_engine_data();
-    ableton::Link::SessionState process_session_state(const EngineData&, const Micros&);
-    void play_sequencer_beats(const double, const int, const Micros, const ableton::Link::SessionState&);
-    void play_sequencer_phase(const double, const int, const Micros, const double, const ableton::Link::SessionState&);
-    void debug_state(const bool, const int, const Micros&, const double, const MidiMessage&, 
-        const Micros& = Micros{}, const double = 0., const double = 0.);
+    void process_session_state(const EngineData& engine_data);
+    void trigger_sampler(const double sample_rate, const double quantum, const int buffer_size);
     void show_audio_device_settings();
+    static String double_str(const double d);
     
     //==============================================================================
     void paint(Graphics& g) override;
@@ -51,22 +48,25 @@ private:
 
     //==============================================================================
     std::unique_ptr<ableton::Link> link;
+    ableton::link::HostTimeFilter<ableton::link::platform::Clock> host_time_filter;
+    std::unique_ptr<ableton::Link::SessionState> session;
     EngineData shared_engine_data, lock_free_engine_data;    
     std::mutex engine_data_guard;
-    const int sampler_note = 60; // Temporary, more notes when more samples are added
     AbeSynth abe_synth;
-    MidiBuffer mb;    
-    Value velocity;
-    bool is_playing;
+    MidiBuffer midi_buffer;
+    std::vector<double> beat_map;
+    
+    std::chrono::microseconds output_time;
+    std::uint64_t sample_time = 0;
+    bool is_playing = false;
+    static constexpr double beat_length = 1.;
+    static constexpr int middle_c = 60;
+    
     
     // GUI
     TextButton tb_settings, tb_link, tb_play, tb_stop, tb_sync;
     Slider sl_quantum, sl_bpm, sl_velocity;
-    Label main_display, lb_quantum, lb_bpm, lb_velocity;    
-
-    // Debug-only
-    int64 buffer_sn, prev_beat_sn;
-    int console_line_count, buffer_cycle_count;
+    Label main_display, lb_quantum, lb_bpm, lb_velocity;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
