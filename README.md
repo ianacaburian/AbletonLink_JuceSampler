@@ -3,7 +3,7 @@
 - Open a second Link app such as Ableton Live on the same machine or another machine connected to the same LAN
 - Click Link and StartStopSync to enable peers to control bpm and transport
 - Adjust BPM in the second app while playing to witness glorious synchronization.
-- Enable startstopsync in Ableton preferences to also have the ability to control transport from the second app.    
+- Enable "Start Stop Sync" in Ableton preferences to also have the ability to control transport from the second app.    
 
 ![alt text](https://github.com/ianacaburian/AbletonLink_JuceSampler/blob/master/ScreenShot.png) .   
 
