@@ -10,7 +10,7 @@
 - cd to your project directory, then optionally into your dependencies folder.
 - Add link as a submodule in this location:    
 `git submodule add https://github.com/Ableton/link link`
-Then, because link also depends on another dependency, ASIO, it's best to recursively update (mandatory for older git versions):    
+- Then, because link also depends on another dependency, ASIO, it's best to recursively update (mandatory for older git versions):    
 `git submodule update --init --recursive` .   
 ### 2. Include Header Search Paths
 - Link requires 2 paths to be included in Juce:
