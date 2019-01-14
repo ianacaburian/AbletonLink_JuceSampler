@@ -21,7 +21,7 @@
 2. `link/modules/asio-standalone/asio/include`
 - These can be added in Projucer (for all builds) in "Project Settings -> Header Search Paths".
 - Because this project places the link dependency in a "Dependencies" folder, the Header Search Paths field for this project looks like this:    
->../../Dependencies/link/include .   
+>../../Dependencies/link/include    
 >../../Dependencies/link/modules/asio-standalone/asio/include
 
 ### 3. Configure Projucer
