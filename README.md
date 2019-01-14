@@ -14,7 +14,7 @@
 - Add link as a submodule in this location:    
 `git submodule add https://github.com/Ableton/link link`
 - Then, because link also depends on another dependency, ASIO, it's best to recursively update (mandatory for older git versions):    
-`git submodule update --init --recursive` .   
+`git submodule update --init --recursive`    
 ### 2. Include Header Search Paths
 - Link requires 2 paths to be included in Juce:
 1. `link/include`
@@ -27,13 +27,13 @@
 ### 3. Configure Projucer
 Link requires the platform to be specified, otherwise compiler/build errors result.
 #### MacOSX & iOS
-In the Projucer, go to the MacOSX and/or iOS IDE exporters (e.g. Xcode) and include the following under "Extra Preprocessor Definitions" .    
+In the Projucer, go to the MacOSX and/or iOS IDE exporters (e.g. Xcode) and include the following under "Extra Preprocessor Definitions"     
 `LINK_PLATFORM_MACOSX=1`
 #### Windows
-- In the Projucer, go to the Windows related exporters (e.g. Visual Studio 2017) and include the following under "Extra Preprocessor Definitions" .   
-`LINK_PLATFORM_WINDOWS=1` .   
+- In the Projucer, go to the Windows related exporters (e.g. Visual Studio 2017) and include the following under "Extra Preprocessor Definitions"    
+`LINK_PLATFORM_WINDOWS=1`    
 - If you encounter further problems, you might need to also add this on a separate line:    
-`_WIN32_WINNT=0x0501` .   
+`_WIN32_WINNT=0x0501`    
 - For Windows, Link requires compiler flags to be provided. Below "Extra Prepocessor Definitions" you will find "Extra Compiler Flags" where you must add:    
 `/D_SCL_SECURE_NO_WARNINGS /DLINK_BUILD_VLD=1 /MP /EHsc /wd4061 /wd4265 /wd4350 /wd4355 /wd4365 /wd4371 /wd4503 /wd4510 /wd4512 /wd4514 /wd4571 /wd4610 /wd4625 /wd4626 /wd4628 /wd4640 /wd4710 /wd4711 /wd4738 /wd4820 /wd4464 /wd4548 /wd4623 /wd4868 /wd5026 /wd5027 /wd4987 /wd4774 /wd5039 /wd4917`
 ### 4. Include Header Files
@@ -61,7 +61,7 @@ In my experience, these things must be handled to prevent any unwanted artifacts
 Seeing as Link uses real-time values for its algorithms, these can be hard to debug without setting up some test harness or mocking framework. Just don't mistake time jumps or buffer overlaps as bugs themselves, these are occasional, but normal.
 
 ### 4. The std::chrono library provides for creating your own time types
-Howard Hinnant (the almighty creator of time) explains this best in his talk at cppcon 2016. In this project, microseconds to samples is converted explicitly using the formula micros_to_samples = 1.0e6 / sample_rate. However, the chrono library provides conveniences to create types that do these conversions automatically.
+Howard Hinnant (the almighty creator of time) explains this best in his talk at cppcon 2016. In this project, microseconds to samples is converted explicitly using the formula micros_to_samples = 1.0e6 / sample_rate. However, the chrono library provides conveniences to create types that do these conversions automatically.    
 https://www.youtube.com/watch?v=P32hvk8b13M
 
 ### 5. Use CachedValues for time sensitive state data.
